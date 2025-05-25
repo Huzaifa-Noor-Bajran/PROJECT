@@ -1,0 +1,65 @@
+// Define ultrasonic sensor pins
+const int TRIG_PIN = 6;  // Trigger pin
+const int ECHO_PIN = 7;  // Echo pin
+
+// Define LED pins
+const int ledPins[8] = {2, 3, 4, 5, 8, 9, 10, 11};
+
+// Variables for ultrasonic sensor
+float duration_us;
+float distance_inch;
+
+unsigned long lastDetectionTime = 0;  // Time when object was last detected
+bool objectDetected = false;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // Set LED pins as output and turn them off
+  for (int i = 0; i < 8; i++) {
+    pinMode(ledPins[i], OUTPUT);
+    digitalWrite(ledPins[i], LOW);
+  }
+
+  digitalWrite(TRIG_PIN, LOW); // Ensure trigger pin is low initially
+}
+
+void loop() {
+  // Trigger ultrasonic pulse
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Read echo pulse
+  duration_us = pulseIn(ECHO_PIN, HIGH);
+
+  // Convert duration to distance (in inches)
+  distance_inch = duration_us * 0.0133 / 2;
+
+  // Detect object within 8 inches
+  if (distance_inch > 0 && distance_inch <= 8) {
+    objectDetected = true;
+    lastDetectionTime = millis(); // Update last detection time
+  }
+
+  // Keep LEDs on for 3.5 seconds after detection
+  if (objectDetected && millis() - lastDetectionTime <= 3500) {
+    for (int i = 0; i < 8; i++) {
+      digitalWrite(ledPins[i], HIGH);
+    }
+  } else {
+    objectDetected = false;
+    for (int i = 0; i < 8; i++) {
+      digitalWrite(ledPins[i], LOW);
+    }
+  }
+
+  // Output distance to Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance_inch);
+  Serial.println(" in");
+
+  delay(50); // Small delay for stability
+}
